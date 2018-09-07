@@ -53,6 +53,22 @@ uis.directive('uiSelectChoices',
 
       return function link(scope, element, attrs, $select) {
 
+        var lastIndex = -1;
+        function mouseActivationHandler(ev) {
+          var row = angular.element(ev.target).closest('.ui-select-choices-row');
+          if (row) {
+            var rowScope = row.scope();
+            if (rowScope && angular.isDefined(rowScope.$index)) {
+              var newIndex = rowScope.$index;
+              if (newIndex !== lastIndex) {
+                lastIndex = newIndex;
+                scope.$apply(function() {
+                  $select.activeIndex = newIndex;
+                });
+              }
+            }
+          }
+        }
 
         $select.parseRepeatAttr(attrs.repeat, groupByExp, groupFilterExp); //Result ready at $select.parserResult
         $select.disableChoiceExpression = attrs.uiDisableChoice;
@@ -80,8 +96,10 @@ uis.directive('uiSelectChoices',
           if (open) {
             tElement.attr('role', 'listbox');
             $select.refresh(attrs.refresh);
+            element.on('mousemove', mouseActivationHandler);
           } else {
             element.removeAttr('role');
+            element.off('mousemove', mouseActivationHandler);
           }
         });
       };
