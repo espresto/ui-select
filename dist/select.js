@@ -1,7 +1,7 @@
 /*!
  * ui-select
  * http://github.com/angular-ui/ui-select
- * Version: 0.19.8 - 2017-12-04T16:46:59.817Z
+ * Version: 0.19.8 - 2018-09-07T19:52:38.210Z
  * License: MIT
  */
 
@@ -239,6 +239,22 @@ uis.directive('uiSelectChoices',
 
       return function link(scope, element, attrs, $select) {
 
+        var lastIndex = -1;
+        function mouseActivationHandler(ev) {
+          var row = angular.element(ev.target).closest('.ui-select-choices-row');
+          if (row) {
+            var rowScope = row.scope();
+            if (rowScope && angular.isDefined(rowScope.$index)) {
+              var newIndex = rowScope.$index;
+              if (newIndex !== lastIndex) {
+                lastIndex = newIndex;
+                scope.$apply(function() {
+                  $select.activeIndex = newIndex;
+                });
+              }
+            }
+          }
+        }
 
         $select.parseRepeatAttr(attrs.repeat, groupByExp, groupFilterExp); //Result ready at $select.parserResult
         $select.disableChoiceExpression = attrs.uiDisableChoice;
@@ -266,8 +282,10 @@ uis.directive('uiSelectChoices',
           if (open) {
             tElement.attr('role', 'listbox');
             $select.refresh(attrs.refresh);
+            element.on('mousemove', mouseActivationHandler);
           } else {
             element.removeAttr('role');
+            element.off('mousemove', mouseActivationHandler);
           }
         });
       };
@@ -862,11 +880,10 @@ uis.controller('uiSelectCtrl',
         }
         break;
       case KEY.UP:
-        var minActiveIndex = (ctrl.search.length === 0 && ctrl.tagging.isActivated) ? -1 : 0;
         if (!ctrl.open && ctrl.multiple) ctrl.activate(false, true); //In case its the search input in 'multiple' mode
-        else if (ctrl.activeIndex > minActiveIndex) {
+        else if (ctrl.activeIndex > 0) {
           var idxmin = --ctrl.activeIndex;
-          while(_isItemDisabled(ctrl.items[idxmin]) && idxmin > minActiveIndex) {
+          while(_isItemDisabled(ctrl.items[idxmin]) && idxmin > 0) {
             ctrl.activeIndex = --idxmin;
           }
         }
